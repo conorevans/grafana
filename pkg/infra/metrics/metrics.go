@@ -96,6 +96,9 @@ var (
 	// MDBDataSourceQueryByID is a metric counter for getting datasource by id
 	MDBDataSourceQueryByID prometheus.Counter
 
+	// MLogMessagesTotal is a metric counter for Grafana server logs
+	MLogMessagesTotal *prometheus.CounterVec
+
 	// LDAPUsersSyncExecutionTime is a metric summary for LDAP users sync execution duration
 	LDAPUsersSyncExecutionTime prometheus.Summary
 
@@ -357,6 +360,14 @@ func init() {
 		Namespace: ExporterName,
 	})
 
+	MLogMessagesTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name:      "log_messages_total",
+			Help:      "counter for Grafana server messages",
+			Namespace: ExporterName,
+		}, []string{"level"},
+	)
+
 	LDAPUsersSyncExecutionTime = prometheus.NewSummary(prometheus.SummaryOpts{
 		Name:       "ldap_users_sync_execution_time",
 		Help:       "summary for LDAP users sync execution duration",
@@ -513,9 +524,9 @@ func init() {
 }
 
 // SetBuildInformation sets the build information for this binary
-func SetBuildInformation(version, revision, branch string) {
+func SetBuildInformation(version, revision, branch string, isEnterprise bool) {
 	edition := "oss"
-	if setting.IsEnterprise {
+	if isEnterprise {
 		edition = "enterprise"
 	}
 
@@ -578,6 +589,7 @@ func initMetricVars() {
 		MAwsCloudWatchListMetrics,
 		MAwsCloudWatchGetMetricData,
 		MDBDataSourceQueryByID,
+		MLogMessagesTotal,
 		LDAPUsersSyncExecutionTime,
 		MRenderingRequestTotal,
 		MRenderingSummary,

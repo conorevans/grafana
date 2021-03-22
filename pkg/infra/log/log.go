@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-stack/stack"
+	"github.com/grafana/grafana/pkg/infra/metrics/metrics"
 	"github.com/grafana/grafana/pkg/util"
 	"github.com/grafana/grafana/pkg/util/errutil"
 	"github.com/inconshreveable/log15"
@@ -67,10 +68,12 @@ func Infof(format string, v ...interface{}) {
 	}
 
 	Root.Info(message)
+	metrics.MLogMessagesTotal.WithLabelValues("info").Inc()
 }
 
 func Warn(msg string, v ...interface{}) {
 	Root.Warn(msg, v...)
+	metrics.MLogMessagesTotal.WithLabelValues("warn").Inc()
 }
 
 func Warnf(format string, v ...interface{}) {
@@ -81,19 +84,21 @@ func Warnf(format string, v ...interface{}) {
 		message = format
 	}
 
-	Root.Warn(message)
+	Warn(message)
 }
 
 func Error(msg string, args ...interface{}) {
 	Root.Error(msg, args...)
+	metrics.MLogMessagesTotal.WithLabelValues("error").Inc()
 }
 
 func Errorf(skip int, format string, v ...interface{}) {
-	Root.Error(fmt.Sprintf(format, v...))
+	Error(fmt.Sprintf(format, v...))
 }
 
 func Fatalf(skip int, format string, v ...interface{}) {
 	Root.Crit(fmt.Sprintf(format, v...))
+	metrics.MLogMessagesTotal.WithLabelValues("crit").Inc()
 	if err := Close(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to close log: %s\n", err)
 	}
@@ -143,7 +148,7 @@ func getLogLevelFromString(levelName string) log15.Lvl {
 	level, ok := logLevels[levelName]
 
 	if !ok {
-		Root.Error("Unknown log level", "level", levelName)
+		Error("Unknown log level", "level", levelName)
 		return log15.LvlError
 	}
 
@@ -193,7 +198,7 @@ func ReadLoggingConfig(modes []string, logsPath string, cfg *ini.File) error {
 		mode = strings.TrimSpace(mode)
 		sec, err := cfg.GetSection("log." + mode)
 		if err != nil {
-			Root.Error("Unknown log mode", "mode", mode)
+			Error("Unknown log mode", "mode", mode)
 			return errutil.Wrapf(err, "failed to get config section log.%s", mode)
 		}
 
@@ -212,7 +217,7 @@ func ReadLoggingConfig(modes []string, logsPath string, cfg *ini.File) error {
 			fileName := sec.Key("file_name").MustString(filepath.Join(logsPath, "grafana.log"))
 			dpath := filepath.Dir(fileName)
 			if err := os.MkdirAll(dpath, os.ModePerm); err != nil {
-				Root.Error("Failed to create directory", "dpath", dpath, "err", err)
+				Error("Failed to create directory", "dpath", dpath, "err", err)
 				return errutil.Wrapf(err, "failed to create log directory %q", dpath)
 			}
 			fileHandler := NewFileWriter()
@@ -224,7 +229,7 @@ func ReadLoggingConfig(modes []string, logsPath string, cfg *ini.File) error {
 			fileHandler.Daily = sec.Key("daily_rotate").MustBool(true)
 			fileHandler.Maxdays = sec.Key("max_days").MustInt64(7)
 			if err := fileHandler.Init(); err != nil {
-				Root.Error("Failed to initialize file handler", "dpath", dpath, "err", err)
+				Error("Failed to initialize file handler", "dpath", dpath, "err", err)
 				return errutil.Wrapf(err, "failed to initialize file handler")
 			}
 

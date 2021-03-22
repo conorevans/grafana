@@ -146,7 +146,7 @@ func executeServer(configFile, homePath, pidFile, packaging string, traceDiagnos
 	setting.IsEnterprise = extensions.IsEnterprise
 	setting.Packaging = validPackaging(packaging)
 
-	metrics.SetBuildInformation(version, commit, buildBranch)
+	metrics.SetBuildInformation(version, commit, buildBranch, extensions.IsEnterprise)
 
 	s, err := server.New(server.Config{
 		ConfigFile: configFile, HomePath: homePath, PidFile: pidFile,
