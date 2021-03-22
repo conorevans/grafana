@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-stack/stack"
-	"github.com/grafana/grafana/pkg/infra/metrics/metrics"
+	"github.com/grafana/grafana/pkg/infra/metrics"
 	"github.com/grafana/grafana/pkg/util"
 	"github.com/grafana/grafana/pkg/util/errutil"
 	"github.com/inconshreveable/log15"
